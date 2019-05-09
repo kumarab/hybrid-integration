@@ -1,0 +1,102 @@
+/*  
+ * prramu - 2/5/2019
+ */
+
+plugins {
+    id "com.github.spacialcircumstances.gradle-cucumber-reporting" version "0.1.3"
+    id 'groovy'
+}
+sourceSets.main.java.srcDirs = []
+sourceSets.main.groovy.srcDirs = ["src/main/java", "src/main/groovy"]
+
+allprojects {
+    group 'oracle.cloud.paas.yaml'
+    version = rootProject.version
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'maven'
+    apply plugin: 'groovy'
+    apply plugin: 'maven-publish'
+
+
+    sourceCompatibility = 1.8
+
+    repositories {
+
+        maven { url 'http://artifactory.oraclecorp.com/artifactory/paasqa-dev-local' }
+        maven { url 'http://artifactory.oraclecorp.com/artifactory/paasqa-libs-release-local' }
+        maven { url 'http://artifactory-slc.oraclecorp.com/artifactory/fmw-virtual' }
+        maven { url 'http://artifactory-slc.oraclecorp.com/artifactory/jcenter-cache'}
+        mavenCentral()
+
+    }
+
+
+    dependencies {
+        compile("oracle.cloud.paas.utilities:logger:2.0.+")
+        compile("oracle.cloud.paas.opc-infra:environment:2.0.+")
+        compile("oracle.cloud.paas.utilities:utils:2.0.+")
+        compile 'org.codehaus.groovy:groovy-all:2.4.15'
+        testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+        compile "org.testng:testng:6.3.1"
+        compile ('oracle.cloud.paas.opc-infra:psm:2.0.+')
+        compile ('oracle.cloud.paas.weblogic:weblogic:2.0+')
+        compile ('oracle.cloud.paas.compute-infra:nimbula:2.0.+')
+        compile ('oracle.cloud.paasqa.core:psm:4.0.54+')
+        compile ('oracle.cloud.paasqa.core:tas:4.0.54+')
+        compile ('oracle.cloud.paasqa.core:logger:4.0.54')
+        testCompile 'io.cucumber:cucumber-java8:4.2.0'
+        testCompile 'io.cucumber:cucumber-junit:4.2.0'
+        testCompile 'io.rest-assured:rest-assured:3.3.0'
+        testCompile 'io.rest-assured:json-schema-validator:3.3.0'
+        testCompile 'com.google.code.gson:gson:2.8.1'
+    }
+
+
+
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testRuntime
+    }
+}
+
+task cucumber() {
+    dependsOn assemble, compileTestJava
+    doLast {
+        javaexec {
+            systemProperties System.properties
+            systemProperty 'inputdata', System.getProperty('inputdata')
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--glue', 'HybridIntegTests', 'src/test/resources' ,'-p','html:report/reporthtml','-p','json:report/cucumber.json','--tags',System.getProperty('tags')]
+        }
+    }
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+
+        // events 'standard_out', 'standard_error'
+
+        // events = ['standard_out', 'standard_error']
+
+        // events org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT,
+        //        org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR,
+    }
+}
+
+
+//task integrationTests(type: Test) {
+//    dependsOn 'assemble', 'Library'
+//    testClassesDir = sourceSets.integrationTest.output.classesDir
+//    classpath = sourceSets.integrationTest.runtimeClasspath
+//}
+
+cucumberReports {
+//    outputDir = file('/Users/praveenramu/Work/cucumber/generated/html')
+//    buildId = '0'
+//    reports = files('/Users/praveenramu/Work/cucumber/cucumber-report.json', '/Users/praveenramu/Work/cucumber/cucumber-json.json')
+}
